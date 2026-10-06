@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>golf_cart_sim</name><version>0.1.0</version>
+  <description>Dimension-guided rigid golf cart with physical Ackermann steering.</description>
+  <author email="tianwei.niu@cau.edu.cn">Tianwei Niu</author>
+  <maintainer email="tianwei.niu@cau.edu.cn">Tianwei Niu</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>gazebo_dev</build_depend>
+  <depend>gazebo_ros</depend><depend>rclcpp</depend><depend>ackermann_msgs</depend>
+  <depend>nav_msgs</depend><depend>sensor_msgs</depend><depend>tf2_msgs</depend>
+  <exec_depend>xacro</exec_depend><exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>launch_ros</exec_depend><exec_depend>ament_index_python</exec_depend>
+  <exec_depend>rclpy</exec_depend><exec_depend>gazebo_msgs</exec_depend>
+  <exec_depend>python3-tk</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <test_depend>python3-numpy</test_depend><test_depend>python3-yaml</test_depend>
+  <export><build_type>ament_cmake</build_type>
+    <gazebo_ros plugin_path="lib" gazebo_model_path="${prefix}/.."/>
+  </export>
+</package>

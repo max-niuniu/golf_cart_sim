@@ -1,0 +1,9 @@
+/build/
+/install/
+/log/
+/validation/
+__pycache__/
+*.py[cod]
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="golf_cart">
+  <xacro:arg name="config_file" default="$(find golf_cart_sim)/config/vehicle.yaml"/>
+  <xacro:arg name="detailed_visuals" default="true"/>
+  <xacro:property name="p" value="${xacro.load_yaml('$(arg config_file)')}"/>
+  <xacro:property name="L" value="${p['wheelbase']}"/>
+  <xacro:property name="r" value="${p['wheel_radius']}"/>
+  <xacro:property name="w" value="${p['wheel_width']}"/>
+  <xacro:property name="inner_limit" value="${atan2(L*tan(p['max_steer']),L-p['front_track']*tan(p['max_steer'])/2)+0.02}"/>
+  <xacro:macro name="box_inertia" params="mass x y z">
+    <mass value="${mass}"/>
+    <inertia ixx="${mass*(y*y+z*z)/12}" iyy="${mass*(x*x+z*z)/12}" izz="${mass*(x*x+y*y)/12}" ixy="0" ixz="0" iyz="0"/>
+  </xacro:macro>
+  <!-- base_link: rear axle midpoint, x forward, y left, z up (m/rad). -->
+  <link name="base_link">
+    <inertial><origin xyz="${p['com_x']} 0 ${p['com_z']}"/>
+      <xacro:box_inertia mass="${p['body_mass']}" x="2.2" y="1.1" z="0.9"/>
+    </inertial>
+    <xacro:if value="$(arg detailed_visuals)">
+      <visual name="cad_body"><geometry><mesh filename="package://golf_cart_sim/meshes/body.dae"/></geometry></visual>
+    </xacro:if>
+  </link>
+  <xacro:macro name="piece" params="name xyz size color rpy:='0 0 0'">
+    <link name="${name}">
+      <inertial><xacro:box_inertia mass="0.01" x="0.1" y="0.1" z="0.1"/></inertial>
+      <xacro:unless value="$(arg detailed_visuals)"><visual><geometry><box size="${size}"/></geometry></visual></xacro:unless>
+      <collision><geometry><box size="${size}"/></geometry></collision>
+    </link>
+    <joint name="${name}_fixed" type="fixed"><parent link="base_link"/><child link="${name}"/><origin xyz="${xyz}" rpy="${rpy}"/></joint>
+    <gazebo reference="${name}"><material>${color}</material></gazebo>
+  </xacro:macro>
+  <!-- Retained simple physical bodies; proxy visuals are optional for diagnostics. -->
+  <xacro:piece name="floor" xyz="0.85 0 0.1" size="1.7 0.85 0.12" color="Gazebo/DarkGrey"/>
+  <xacro:piece name="battery_box" xyz="0.45 0 0.32" size="0.6 0.9 0.32" color="Gazebo/DarkGrey"/>
+  <xacro:piece name="hood" xyz="1.58 0 0.48" size="0.55 1.02 0.38" color="Gazebo/Green"/>
+  <xacro:piece name="bumper" xyz="1.88 0 0.05" size="0.08 1.15 0.08" color="Gazebo/DarkGrey"/>
+  <xacro:piece name="seat" xyz="0.5 0 0.55" size="0.55 1.02 0.12" color="Gazebo/Black"/>
+  <xacro:piece name="seat_back" xyz="0.22 0 0.85" size="0.1 1.02 0.55" color="Gazebo/Black"/>
+  <xacro:property name="bedx" value="${-p['rear_overhang']+p['bed_length']/2}"/>
+  <xacro:piece name="bed_floor" xyz="${bedx} 0 0.50" size="${p['bed_length']} ${p['bed_width']} 0.04" color="Gazebo/Grey"/>
+  <xacro:piece name="bed_back" xyz="${-p['rear_overhang']+0.015} 0 ${0.50+p['bed_height']/2}" size="0.03 ${p['bed_width']} ${p['bed_height']}" color="Gazebo/Green"/>
+  <xacro:piece name="bed_front" xyz="${-p['rear_overhang']+p['bed_length']-0.015} 0 ${0.50+p['bed_height']/2}" size="0.03 ${p['bed_width']} ${p['bed_height']}" color="Gazebo/Green"/>
+  <xacro:macro name="side" params="name sign">
+    <xacro:piece name="bed_${name}" xyz="${bedx} ${sign*(p['bed_width']/2-0.015)} ${0.50+p['bed_height']/2}" size="${p['bed_length']} 0.03 ${p['bed_height']}" color="Gazebo/Green"/>
+    <xacro:piece name="roof_rear_${name}" xyz="0.12 ${sign*0.48} 1.13" size="0.035 0.035 1.18" color="Gazebo/DarkGrey"/>
+    <xacro:piece name="roof_front_${name}" xyz="1.42 ${sign*0.48} 1.16" size="0.035 0.035 1.16" rpy="0 -0.23 0" color="Gazebo/DarkGrey"/>
+  </xacro:macro>
+  <xacro:side name="left" sign="1"/><xacro:side name="right" sign="-1"/>
+  <xacro:piece name="roof" xyz="0.82 0 ${p['overall_height']-r-0.03}" size="1.8 1.15 0.06" color="Gazebo/Green"/>
+  <xacro:macro name="wheel" params="name parent xyz">
+    <link name="${name}_wheel">
+      <inertial><mass value="${p['wheel_mass']}"/>
+        <inertia ixx="${p['wheel_mass']*(3*r*r+w*w)/12}" iyy="${p['wheel_mass']*r*r/2}" izz="${p['wheel_mass']*(3*r*r+w*w)/12}" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <xacro:if value="$(arg detailed_visuals)">
+        <visual name="cad_${name}"><geometry><mesh filename="package://golf_cart_sim/meshes/${name}_wheel.dae" scale="${r/0.28} ${w/0.24} ${r/0.28}"/></geometry></visual>
+      </xacro:if>
+      <xacro:unless value="$(arg detailed_visuals)"><visual><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${r}" length="${w}"/></geometry></visual></xacro:unless>
+      <collision><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${r}" length="${w}"/></geometry></collision>
+    </link>
+    <joint name="${name}_wheel_joint" type="continuous">
+      <parent link="${parent}"/><child link="${name}_wheel"/><origin xyz="${xyz}"/>
+      <axis xyz="0 1 0"/><limit effort="${p['drive_torque']}" velocity="30"/><dynamics damping="0.02" friction="0"/>
+    </joint>
+    <gazebo reference="${name}_wheel">
+      <xacro:unless value="$(arg detailed_visuals)"><material>Gazebo/Black</material></xacro:unless><mu1>${p['friction']}</mu1><mu2>${p['friction']}</mu2>
+      <kp>1000000</kp><kd>100</kd><minDepth>0.001</minDepth><maxVel>0.1</maxVel>
+    </gazebo>
+  </xacro:macro>
+  <xacro:macro name="front" params="name sign">
+    <link name="front_${name}_carrier">
+      <inertial><xacro:box_inertia mass="${p['carrier_mass']}" x="0.4" y="0.4" z="0.4"/></inertial>
+      <xacro:if value="$(arg detailed_visuals)">
+        <visual name="cad_front_${name}_knuckle"><geometry><mesh filename="package://golf_cart_sim/meshes/front_${name}_carrier.dae"/></geometry></visual>
+      </xacro:if>
+    </link>
+    <joint name="front_${name}_steer_joint" type="revolute">
+      <parent link="base_link"/><child link="front_${name}_carrier"/>
+      <origin xyz="${L} ${sign*p['front_track']/2} 0"/><axis xyz="0 0 1"/>
+      <limit lower="${-inner_limit}" upper="${inner_limit}" effort="${p['steer_torque']}" velocity="1.5"/>
+      <dynamics damping="0.2" friction="0"/>
+    </joint>
+    <xacro:wheel name="front_${name}" parent="front_${name}_carrier" xyz="0 0 0"/>
+  </xacro:macro>
+  <xacro:front name="left" sign="1"/><xacro:front name="right" sign="-1"/>
+  <xacro:wheel name="rear_left" parent="base_link" xyz="0 ${p['rear_track']/2} 0"/>
+  <xacro:wheel name="rear_right" parent="base_link" xyz="0 ${-p['rear_track']/2} 0"/>
+  <gazebo>
+    <plugin name="golf_ackermann" filename="libgolf_ackermann.so">
+      <ros><namespace>/golf</namespace></ros>
+      <wheelbase>${L}</wheelbase><front_track>${p['front_track']}</front_track><rear_track>${p['rear_track']}</rear_track><wheel_radius>${r}</wheel_radius>
+      <max_speed>${p['max_speed']}</max_speed><max_steer>${p['max_steer']}</max_steer>
+      <max_accel>${p['max_accel']}</max_accel><max_decel>${p['max_decel']}</max_decel><steer_rate>${p['steer_rate']}</steer_rate>
+      <drive_torque>${p['drive_torque']}</drive_torque><steer_torque>${p['steer_torque']}</steer_torque>
+      <steer_position_gain>${p['steer_position_gain']}</steer_position_gain>
+      <command_timeout>${p['command_timeout']}</command_timeout>
+      <contact_slip>${p['contact_slip']}</contact_slip>
+    </plugin>
+  </gazebo>
+</robot>

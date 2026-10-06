@@ -1,0 +1,30 @@
+# SI units. Reference images live in golfmodel/高尔夫小车v0/.
+# Source GLB wheel bounds establish centers +/-0.485 m; outer tyre faces +/-0.605 m.
+wheelbase: 1.700
+front_track: 0.970
+rear_track: 0.970   # Both axles verified against the supplied GLB wheel instances.
+wheel_radius: 0.280
+wheel_width: 0.240
+overall_length: 2.800
+overall_height: 2.050
+rear_overhang: 0.820  # 2.800 - 1.700 - 0.280, from length+front-edge image.
+bed_length: 0.970
+bed_width: 1.100
+bed_height: 0.275
+# Below: provisional simulation values, NOT measured vehicle specifications.
+body_mass: 418.0
+wheel_mass: 7.0
+carrier_mass: 2.0
+com_x: 0.650
+com_z: 0.400  # Relative to rear axle; 0.680 m above flat ground.
+max_speed: 3.0
+max_steer: 0.50  # Virtual bicycle front angle; radians.
+max_accel: 0.75
+max_decel: 1.5
+steer_rate: 0.6
+drive_torque: 120.0  # Per rear wheel, Nm.
+steer_torque: 200.0
+steer_position_gain: 8.0
+friction: 1.0
+contact_slip: 0.0001  # m/s/N; small numerical contact compliance, not identified tyre data.
+command_timeout: 0.5
